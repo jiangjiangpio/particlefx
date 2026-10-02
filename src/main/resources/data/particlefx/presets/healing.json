@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1, "name": "healing", "durationTicks": 80, "mode": "once", "viewDistance": 24,
+  "layers": [
+    {"particle": "minecraft:heart", "shape": {"type": "heart", "radius": 0.6}, "offset": {"x": 0, "y": 2, "z": 0}, "count": 16, "lifetime": 80, "intervalTicks": 10},
+    {"particle": "minecraft:happy_villager", "shape": {"type": "helix", "radius": 0.8, "height": 1.8, "turns": 2}, "count": 24, "lifetime": 80, "intervalTicks": 4, "animations": [{"type": "rotation", "axis": "y", "from": 0, "to": 360, "durationTicks": 80, "mode": "once"}]}
+  ]
+}

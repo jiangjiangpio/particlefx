@@ -1,0 +1,97 @@
+plugins {
+    id 'fabric-loom' version '1.14.10'
+    id 'maven-publish'
+}
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.terraformersmc.com/releases/' }
+}
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        particlefx {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modCompileOnly 'com.terraformersmc:modmenu:17.0.0'
+    implementation 'net.objecthunter:exp4j:0.4.8'
+    include 'net.objecthunter:exp4j:0.4.8'
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation sourceSets.client.output
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}
+test { useJUnitPlatform() }
+tasks.register('verifyClientScreens') {
+    def guiSources = fileTree('src/client/java/dev/particlefx/client/gui') { include '**/*.java' }
+    def languages = files('src/client/resources/assets/particlefx/lang/en_us.json',
+        'src/client/resources/assets/particlefx/lang/zh_cn.json')
+    inputs.files(guiSources, languages)
+    doLast {
+        def json = new groovy.json.JsonSlurper()
+        def english = json.parse(languages.files.find { it.name == 'en_us.json' })
+        def chinese = json.parse(languages.files.find { it.name == 'zh_cn.json' })
+        if (english.keySet() != chinese.keySet()) {
+            throw new GradleException('ParticleFX en_us and zh_cn translation keys differ')
+        }
+        guiSources.each { source ->
+            def code = source.getText('UTF-8')
+            if (code.contains('super.renderBackground(')) {
+                throw new GradleException("${source.name} calls super.renderBackground; custom screens must keep background rendering single-pass")
+            }
+            (code =~ /"(?:screen|tab|button|label|status|picker|confirm|mode)\.[A-Za-z0-9_.-]+"/).each { match ->
+                String key = "particlefx.${match.substring(1, match.length() - 1)}"
+                if (!key.endsWith('.') && !english.containsKey(key)) {
+                    throw new GradleException("${source.name} references missing translation: ${key}")
+                }
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyClientScreens') }
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+loom {
+    mods {
+        particlefx_test { sourceSet sourceSets.gametest }
+    }
+    runs {
+        gametest {
+            server()
+            name = 'ParticleFX headless integration tests'
+            source sourceSets.gametest
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('gametest-results.xml').get().asFile.absolutePath}"
+            runDir 'build/gametest'
+        }
+    }
+}
+jar { from('LICENSE') { rename { "${it}_${project.base.archivesName.get()}" } } }
+publishing { publications { mavenJava(MavenPublication) { from components.java } } }

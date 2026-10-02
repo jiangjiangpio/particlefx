@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1, "name": "magic_circle", "durationTicks": 180, "mode": "loop", "viewDistance": 32,
+  "layers": [
+    {"particle": "minecraft:end_rod", "shape": {"type": "circle", "radius": 2.5}, "count": 64, "lifetime": 180, "intervalTicks": 3, "offset": {"x": 0, "y": 0.1, "z": 0}},
+    {"particle": "minecraft:enchant", "shape": {"type": "star", "radius": 2.2, "innerRadius": 0.9, "points": 5}, "count": 60, "lifetime": 180, "intervalTicks": 3, "animations": [{"type": "rotation", "axis": "y", "speed": 2, "durationTicks": 180, "mode": "loop"}]},
+    {"particle": "minecraft:flame", "shape": {"type": "circle", "radius": 1.2}, "count": 20, "lifetime": 180, "intervalTicks": 4, "speed": 0.01},
+    {"particle": "minecraft:portal", "shape": {"type": "helix", "radius": 0.6, "height": 1.8, "turns": 2}, "count": 24, "lifetime": 180, "intervalTicks": 4}
+  ]
+}

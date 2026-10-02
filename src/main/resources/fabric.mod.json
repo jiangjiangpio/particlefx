@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "particlefx",
+  "version": "${version}",
+  "name": "ParticleFX | 粒界",
+  "description": "Server-side vanilla particle effect engine. Client editor is optional.",
+  "authors": ["ParticleFX contributors"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.particlefx.ParticleFX"],
+    "client": ["dev.particlefx.client.ParticleFXClient"],
+    "modmenu": ["dev.particlefx.client.ParticleFXModMenu"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {"modmenu": "*", "geyser-fabric": "*"}
+}

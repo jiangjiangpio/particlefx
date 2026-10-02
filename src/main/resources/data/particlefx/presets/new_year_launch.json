@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "name": "new_year_launch",
+  "durationTicks": 65,
+  "mode": "once",
+  "viewDistance": 128,
+  "layers": [
+    {
+      "particle": "minecraft:flame",
+      "shape": {"type": "point"},
+      "count": 6,
+      "lifetime": 55,
+      "intervalTicks": 1,
+      "speed": 0.03,
+      "animations": [
+        {"type": "translation", "axis": "y", "from": 0, "to": 70, "durationTicks": 55, "mode": "once"}
+      ]
+    },
+    {
+      "particle": "minecraft:smoke",
+      "shape": {"type": "point"},
+      "count": 2,
+      "lifetime": 55,
+      "intervalTicks": 2,
+      "speed": 0.01,
+      "animations": [
+        {"type": "translation", "axis": "y", "from": 0, "to": 70, "durationTicks": 55, "mode": "once"}
+      ]
+    },
+    {
+      "particle": "minecraft:end_rod",
+      "shape": {"type": "point"},
+      "count": 1,
+      "lifetime": 55,
+      "intervalTicks": 2,
+      "speed": 0.01,
+      "animations": [
+        {"type": "translation", "axis": "y", "from": 0, "to": 70, "durationTicks": 55, "mode": "once"}
+      ]
+    },
+    {
+      "particle": "minecraft:soul_fire_flame",
+      "shape": {"type": "point"},
+      "count": 2,
+      "lifetime": 55,
+      "intervalTicks": 2,
+      "speed": 0.01,
+      "animations": [
+        {"type": "translation", "axis": "y", "from": 0, "to": 70, "durationTicks": 55, "mode": "once"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "particlefx_test",
+  "version": "1.0.0",
+  "name": "ParticleFX integration tests (development only)",
+  "environment": "server",
+  "entrypoints": {"fabric-gametest": ["dev.particlefx.test.ParticleFXGameTest"]},
+  "depends": {"particlefx": "*", "fabric-gametest-api-v1": "*"}
+}

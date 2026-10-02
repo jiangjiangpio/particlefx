@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1, "name": "ice_aura", "durationTicks": 100, "mode": "ping-pong", "viewDistance": 24,
+  "layers": [
+    {"particle": "minecraft:snowflake", "shape": {"type": "dome", "radius": 1.4}, "count": 36, "lifetime": 100, "intervalTicks": 5},
+    {"particle": "minecraft:end_rod", "shape": {"type": "circle", "radius": 1.2}, "count": 24, "lifetime": 100, "intervalTicks": 4, "animations": [{"type": "translation", "axis": "y", "from": 0.1, "to": 1.8, "durationTicks": 100, "mode": "once"}]}
+  ]
+}
