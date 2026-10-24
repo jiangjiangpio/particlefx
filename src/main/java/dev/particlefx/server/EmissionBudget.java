@@ -15,4 +15,8 @@ public final class EmissionBudget {
     }
     public int particles(){return particles;}
     public int packets(){return packets;}
+    public boolean hasPackets(EngineConfig c){return packets<c.maxPacketsPerTick;}
+    public boolean hasPackets(UUID player,EngineConfig c){
+        return hasPackets(c)&&playerPackets.getOrDefault(player,0)<c.maxPacketsPerPlayerPerTick;
+    }
 }

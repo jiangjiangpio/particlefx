@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1, "name": "teleport", "durationTicks": 40, "mode": "once", "viewDistance": 40,
+  "layers": [
+    {"particle": "minecraft:portal", "shape": {"type": "cylinder", "radius": 1, "height": 2.5}, "count": 64, "lifetime": 35, "intervalTicks": 2, "animations": [{"type": "scale", "axis": "all", "from": 1, "to": 0.1, "durationTicks": 35, "mode": "once"}]},
+    {"particle": "minecraft:cloud", "shape": {"type": "sphere", "radius": 0.8}, "offset": {"x": 0, "y": 1, "z": 0}, "count": 32, "speed": 0.03, "delay": 30, "lifetime": 10, "intervalTicks": 5}
+  ]
+}

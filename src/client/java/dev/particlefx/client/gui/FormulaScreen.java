@@ -13,12 +13,14 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 public final class FormulaScreen extends Screen {
     private final Screen parent;
     private final Consumer<List<Vec3>> apply;
+    private final int maxPoints;
     private TextFieldWidget x,y,z,count;
     private String xs="2*cos(2*pi*t)",ys="sin(4*pi*t)",zs="2*sin(2*pi*t)",countText="128";
     private boolean surface;
     private String status="";
     private int left,w;
-    public FormulaScreen(Screen parent,Consumer<List<Vec3>> apply){super(EditorI18n.tr("screen.formula"));this.parent=parent;this.apply=apply;}
+    public FormulaScreen(Screen parent,Consumer<List<Vec3>> apply){this(parent,EditorLimits.maxCustomPoints(),apply);}
+    public FormulaScreen(Screen parent,int maxPoints,Consumer<List<Vec3>> apply){super(EditorI18n.tr("screen.formula"));this.parent=parent;this.maxPoints=maxPoints;this.apply=apply;}
     @Override protected void init() {
         w=Math.min(460,width-24);left=(width-w)/2;
         int cw=(w-8)/3;
@@ -39,7 +41,7 @@ public final class FormulaScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(EditorI18n.tr("button.apply"),b->{
             try {
                 int n=Integer.parseInt(count.getText().trim());
-                var points=FormulaGenerator.generate(x.getText(),y.getText(),z.getText(),n,surface);
+                var points=FormulaGenerator.generate(x.getText(),y.getText(),z.getText(),n,surface,maxPoints);
                 apply.accept(points);client.setScreen(parent);
             } catch(Exception ex) {status=EditorI18n.msg("status.invalid_input",Objects.toString(ex.getMessage(),"")); }
         }).dimensions(left,184,bw,20).build());

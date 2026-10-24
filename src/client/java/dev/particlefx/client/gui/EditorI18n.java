@@ -4,14 +4,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import dev.particlefx.client.compat.RenderCompatibility;
 
 /** Client-only editor language and tool-level preferences. */
 public final class EditorI18n {
@@ -34,17 +33,15 @@ public final class EditorI18n {
 
     private static final Map<String, String> EN = load("en_us");
     private static final Map<String, String> ZH = load("zh_cn");
-    private static final Path CONFIG = FabricLoader.getInstance().getConfigDir().resolve("particlefx-client.json");
+    private static final EditorPreferences PREFERENCES = new EditorPreferences(
+        FabricLoader.getInstance().getConfigDir().resolve("particlefx-client.json"));
     private static LanguageMode languageMode = LanguageMode.AUTO;
     private static Tier tier = Tier.SIMPLE;
 
     static {
         try {
-            if (Files.isRegularFile(CONFIG)) {
-                JsonObject json = JsonParser.parseString(Files.readString(CONFIG)).getAsJsonObject();
-                if (json.has("language")) languageMode = LanguageMode.fromId(json.get("language").getAsString());
-                if (json.has("tier")) tier = Tier.valueOf(json.get("tier").getAsString().toUpperCase(Locale.ROOT));
-            }
+            languageMode = LanguageMode.fromId(PREFERENCES.text("language","auto"));
+            tier = Tier.valueOf(PREFERENCES.text("tier","simple").toUpperCase(Locale.ROOT));
         } catch (Exception ignored) {
             languageMode = LanguageMode.AUTO;
             tier = Tier.SIMPLE;
@@ -91,6 +88,16 @@ public final class EditorI18n {
         save();
     }
     public static void setTier(Tier value) { tier = value; save(); }
+    public static boolean guideEnabled(EditorPreferences.Guide guide) { return PREFERENCES.guide(guide); }
+    public static boolean setGuideEnabled(EditorPreferences.Guide guide,boolean enabled) {
+        try{PREFERENCES.setGuide(guide,enabled);return true;}
+        catch(java.io.IOException ignored){return false;}
+    }
+    public static RenderCompatibility.Mode renderCompatibility() { return PREFERENCES.renderCompatibility(); }
+    public static boolean setRenderCompatibility(RenderCompatibility.Mode mode) {
+        try { PREFERENCES.setRenderCompatibility(mode); return true; }
+        catch (java.io.IOException ignored) { return false; }
+    }
     private static String effectiveLanguage() {
         if (languageMode != LanguageMode.AUTO) return languageMode.id();
         String minecraftLanguage = "en_us";
@@ -110,11 +117,7 @@ public final class EditorI18n {
     }
     private static void save() {
         try {
-            Files.createDirectories(CONFIG.getParent());
-            JsonObject json = new JsonObject();
-            json.addProperty("language", languageMode.id());
-            json.addProperty("tier", tier.name().toLowerCase(Locale.ROOT));
-            Files.writeString(CONFIG, json.toString(), StandardCharsets.UTF_8);
+            PREFERENCES.setEditor(languageMode.id(),tier.name().toLowerCase(Locale.ROOT));
         } catch (Exception ignored) {}
     }
     private EditorI18n() {}

@@ -120,6 +120,9 @@ public final class EffectStorage {
         if(c==null)throw new IOException("config.json cannot be null");c.validate();return c;
     }
     public Map<String,ParticleEffect> loadEffects() throws IOException {
+        return loadEffects(new EngineConfig());
+    }
+    public Map<String,ParticleEffect> loadEffects(EngineConfig config) throws IOException {
         Map<String,ParticleEffect> result=new LinkedHashMap<>();
         try(var files=Files.list(effects)) {
             for(Path p:files.filter(f->f.getFileName().toString().endsWith(".json")).sorted().limit(EffectValidator.MAX_EFFECTS+1L).toList()) {
@@ -128,7 +131,7 @@ public final class EffectStorage {
                 EffectValidator.name(name);
                 try {
                     ParticleEffect e=JsonSupport.GSON.fromJson(readBounded(p),ParticleEffect.class);
-                    EffectValidator.validate(e);
+                    EffectValidator.validate(e,config.maxCustomPoints);
                     EffectValidator.require(name.equals(e.name),"Filename does not match effect.name");result.put(name,e);
                 } catch(RuntimeException ex) {throw new IOException(p.getFileName()+": "+ex.getMessage(),ex);}
             }
@@ -160,7 +163,13 @@ public final class EffectStorage {
     public void saveTriggers(List<RedstoneTrigger> values) throws IOException {
         atomicWrite(triggers,JsonSupport.GSON.toJson(values));
     }
-    public void save(ParticleEffect effect) throws IOException { EffectValidator.validate(effect);atomicWrite(path(effect.name),JsonSupport.GSON.toJson(effect)); }
+    public void save(ParticleEffect effect) throws IOException { save(effect,new EngineConfig()); }
+    public void save(ParticleEffect effect,EngineConfig config) throws IOException {
+        EffectValidator.validate(effect,config.maxCustomPoints);atomicWrite(path(effect.name),JsonSupport.GSON.toJson(effect));
+    }
+    public void saveConfig(EngineConfig config) throws IOException {
+        config.validate();atomicWrite(root.resolve("config.json"),JsonSupport.GSON.toJson(config));
+    }
     public void delete(String name) throws IOException { Files.deleteIfExists(path(name)); }
     public Path path(String name) {
         EffectValidator.name(name);Path p=effects.resolve(name+".json").normalize();
@@ -174,7 +183,7 @@ public final class EffectStorage {
         if(Files.isSymbolicLink(p))throw new IOException("Symlink configuration files are not allowed: "+p);
         try(InputStream in=Files.newInputStream(p)) {
             byte[] data=in.readNBytes(EffectValidator.MAX_JSON_BYTES+1);
-            if(data.length>EffectValidator.MAX_JSON_BYTES)throw new IOException("JSON exceeds 30000 bytes: "+p);
+            if(data.length>EffectValidator.MAX_JSON_BYTES)throw new IOException("JSON exceeds "+EffectValidator.MAX_JSON_BYTES+" bytes: "+p);
             return new String(data,StandardCharsets.UTF_8);
         }
     }

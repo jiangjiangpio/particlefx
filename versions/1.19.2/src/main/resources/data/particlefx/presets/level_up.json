@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1, "name": "level_up", "durationTicks": 60, "mode": "once", "viewDistance": 32,
+  "layers": [
+    {"particle": "minecraft:totem_of_undying", "shape": {"type": "spiral", "radius": 1.6, "turns": 3}, "count": 48, "lifetime": 60, "intervalTicks": 4, "animations": [{"type": "translation", "axis": "y", "from": 0, "to": 2.5, "durationTicks": 60, "mode": "once"}]},
+    {"particle": "minecraft:end_rod", "shape": {"type": "star", "radius": 0.8, "innerRadius": 0.3}, "rotation": {"x": 90, "y": 0, "z": 0}, "offset": {"x": 0, "y": 2.5, "z": 0}, "count": 25, "lifetime": 40, "delay": 20, "intervalTicks": 6}
+  ]
+}

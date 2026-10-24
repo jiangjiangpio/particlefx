@@ -41,8 +41,8 @@ public final class ParticleFXCommand {
             }))
             .then(literal("json").then(argument("json",StringArgumentType.greedyString()).executes(ctx->run(ctx,"edit",()->{
                 manager(ctx).definition(name(ctx));String json=StringArgumentType.getString(ctx,"json");
-                if(json.length()>EffectValidator.MAX_JSON_BYTES)throw new IllegalArgumentException("JSON too large");
-                ParticleEffect e=JsonSupport.GSON.fromJson(json,ParticleEffect.class);EffectValidator.validate(e);
+                if(json.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>EffectValidator.MAX_JSON_BYTES)throw new IllegalArgumentException("JSON too large");
+                ParticleEffect e=JsonSupport.GSON.fromJson(json,ParticleEffect.class);EffectValidator.validate(e,manager(ctx).config().maxCustomPoints);
                 EffectValidator.require(e.name.equals(name(ctx)),"Effect name differs");manager(ctx).register(e,true);feedback(ctx,"Saved "+e.name);return 1;
             }))))));
         var play=effectArgument().executes(ctx->play(ctx,false,false,false));

@@ -55,7 +55,7 @@ public final class EffectManager {
     public EffectState state(UUID id) {checkThread();ActiveEffect a=active.get(id);return a==null?EffectState.STOPPED:a.clock.state();}
     public void reload() throws IOException {
         checkThread();EngineConfig next=storage.loadConfig();Map<String,CompiledEffect> loaded=new LinkedHashMap<>();
-        Map<String,ParticleEffect> definitions=storage.loadEffects();
+        Map<String,ParticleEffect> definitions=storage.loadEffects(next);
         for(var entry:definitions.entrySet())loaded.put(entry.getKey(),new CompiledEffect(entry.getValue(),next));
         Map<String,ParticleEffectGroup> loadedGroups=storage.loadGroups(definitions.keySet());
         List<RedstoneTrigger> loadedTriggers=storage.loadTriggers();
@@ -70,8 +70,15 @@ public final class EffectManager {
     public void register(ParticleEffect effect,boolean persist) throws IOException {
         checkThread();if(!effects.containsKey(effect.name)&&effects.size()>=EffectValidator.MAX_EFFECTS)throw new IllegalArgumentException("Effect registry limit reached");
         CompiledEffect compiled=new CompiledEffect(effect,config);
-        if(persist)storage.save(compiled.definition);
+        if(persist)storage.save(compiled.definition,config);
         control(effect.name,null,"stop");effects.put(effect.name,compiled);
+    }
+    public void updateMaxCustomPoints(int value) throws IOException {
+        checkThread();
+        EngineConfig candidate=JsonSupport.GSON.fromJson(JsonSupport.GSON.toJson(config),EngineConfig.class);
+        candidate.maxCustomPoints=value;candidate.validate();
+        for(CompiledEffect effect:effects.values())EffectValidator.validate(effect.definition,candidate.maxCustomPoints);
+        storage.saveConfig(candidate);config=candidate;
     }
     public void delete(String name) throws IOException {checkThread();require(name);storage.delete(name);control(name,null,"stop");effects.remove(name);}
     public UUID play(String name,ServerWorld world,Vec3d position,UUID owner,Set<UUID> audience,int maxAge) {
@@ -225,11 +232,14 @@ public final class EffectManager {
         return p==null||!p.isAlive()||!p.getEntityWorld().getRegistryKey().equals(a.world);
     }
     private void emit(ActiveEffect a,ServerWorld world) {
+        if(!budget.hasPackets(config))return;
         var e=a.compiled.definition;double distance=Math.min(config.maxViewDistance,e.viewDistance),d2=distance*distance;
         viewers.clear();
-        for(ServerPlayerEntity p:world.getPlayers())if((a.viewers==null||a.viewers.contains(p.getUuid()))&&p.getEntityPos().squaredDistanceTo(a.position)<=d2)viewers.add(p);
+        for(ServerPlayerEntity p:world.getPlayers())if(budget.hasPackets(p.getUuid(),config)&&(a.viewers==null||a.viewers.contains(p.getUuid()))&&p.getEntityPos().squaredDistanceTo(a.position)<=d2)viewers.add(p);
         if(viewers.isEmpty())return;long local=a.clock.localTick(e.mode,e.durationTicks);int emitted=0;
         for(CompiledEffect.Layer layer:a.compiled.layers) {
+            viewers.removeIf(p->!budget.hasPackets(p.getUuid(),config));
+            if(viewers.isEmpty())return;
             ParticleLayer l=layer.definition();long age=local-l.delay;
             if(age<0||age%l.intervalTicks!=0)continue;frame.evaluate(l,age);if(age>=frame.lifetime)continue;
             int count=(int)Math.min(layer.geometry().length,Math.ceil(l.count*frame.density));
@@ -242,7 +252,10 @@ public final class EffectManager {
             }
             for(int i=0;i<count;i++) {
                 if(emitted>=config.maxParticlesPerEffect||!budget.particle(config)){warnLimit();return;}emitted++;
-                frame.transform(layer.geometry()[(int)((long)i*layer.geometry().length/count)],point);
+                if(!budget.hasPackets(config))return;
+                int index=(int)((long)i*layer.geometry().length/count);
+                if(layer.staticPositions()!=null)System.arraycopy(layer.staticPositions(),index*3,point,0,3);
+                else frame.transform(layer.geometry()[index],point);
                 double x=a.position.x+point[0],y=a.position.y+point[1],z=a.position.z+point[2];
                 if(!Double.isFinite(x)||!Double.isFinite(y)||!Double.isFinite(z)||Math.abs(x)>30000000||Math.abs(z)>30000000||Math.abs(y)>20000000)continue;
                 ParticleS2CPacket original=null;

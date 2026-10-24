@@ -73,7 +73,11 @@ public final class FormulaGenerator {
         return new ExpressionBuilder(text).variables("t","u").functions(MIN,MAX,POW,CLAMP,LERP,SMOOTHSTEP,EASE_IN,EASE_OUT,EASE_IN_OUT,NOISE).build();
     }
     public static List<Vec3> generate(String x,String y,String z,int count,boolean surface) {
-        EffectValidator.range(count,1,EffectValidator.MAX_CUSTOM_POINTS,"point count");
+        return generate(x,y,z,count,surface,EffectValidator.MAX_CUSTOM_POINTS);
+    }
+    public static List<Vec3> generate(String x,String y,String z,int count,boolean surface,int maxPoints) {
+        EffectValidator.range(maxPoints,1,EffectValidator.MAX_CUSTOM_POINTS_LIMIT,"maxCustomPoints");
+        EffectValidator.range(count,1,maxPoints,"point count");
         Expression ex=expression(x),ey=expression(y),ez=expression(z);
         List<Vec3> result=new ArrayList<>(count);
         int cols=surface?(int)Math.ceil(Math.sqrt(count)):count;

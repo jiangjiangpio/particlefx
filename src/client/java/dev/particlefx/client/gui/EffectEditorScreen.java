@@ -62,15 +62,15 @@ public final class EffectEditorScreen extends Screen {
         button("button.local_preview",left,y+23,bw,()->action(()->{if(commit()){LocalPreview.start(effect);client.setScreen(null);}}));
         button("button.delete",left+bw+5,y+23,bw,()->client.setScreen(new ConfirmScreen(yes->{client.setScreen(this);if(yes)request("delete",effect.name,"");},tr("confirm.delete.title",effect.name),tr("confirm.delete.body")))).active=connected();
         button("button.back",left+2*(bw+5),y+23,bw,this::close);
-        if(!requested){requested=true;if(connected())request("list","","");else status=msg("status.local_mode");}
+        if(!requested){requested=true;if(connected()){request("list","","");request("config_get","","");}else status=msg("status.local_mode");}
     }
     private void effectList(){
         int controls=4,cw=(panelWidth-(controls-1)*4)/controls;
         button("button.refresh",left,56,cw,()->request("list","","")).active=connected();
         button("button.new",left+cw+4,56,cw,()->discardThen(()->{effect=new ParticleEffect();effect.name="new_effect";layer=0;tab=2;page=0;dirty=true;refresh();}));
         button("button.import_json",left+2*(cw+4),56,cw,()->discardThen(()->action(()->{
-            String json=client.keyboard.getClipboard();EffectValidator.require(json.getBytes(StandardCharsets.UTF_8).length<=EffectValidator.MAX_JSON_BYTES,"JSON exceeds 30000 bytes");
-            ParticleEffect imported=JsonSupport.GSON.fromJson(json,ParticleEffect.class);EffectValidator.validate(imported);
+            String json=client.keyboard.getClipboard();EffectValidator.require(json.getBytes(StandardCharsets.UTF_8).length<=EffectValidator.MAX_JSON_BYTES,msg("status.json_too_large"));
+            ParticleEffect imported=JsonSupport.GSON.fromJson(json,ParticleEffect.class);EffectValidator.validate(imported,EditorLimits.maxCustomPoints());
             effect=imported;layer=0;dirty=true;tab=2;page=0;refresh();
         })));
         button("button.copy_json",left+3*(cw+4),56,cw,()->action(()->{if(commit()){client.keyboard.setClipboard(JsonSupport.GSON.toJson(effect));status=msg("status.copied_json");}}));
@@ -137,17 +137,20 @@ public final class EffectEditorScreen extends Screen {
     private static String component(Vec3 v,int i){return Double.toString(i==0?v.x():i==1?v.y():v.z());}
     private static Vec3 replace(Vec3 v,int i,double value){return new Vec3(i==0?value:v.x(),i==1?value:v.y(),i==2?value:v.z());}
     private void toolsPane(){
-        ParticleLayer l=selected();int cw=(panelWidth-4)/2;
-        button("button.draw",left,56,cw,()->{if(commit())client.setScreen(new DrawingScreen(this,l.shape.type.equals("custom")?l.shape.vertices:List.of(),points->{
+        ParticleLayer l=selected();int cw=(panelWidth-8)/3;
+        button("button.draw_2d",left,56,cw,()->{if(commit())client.setScreen(new DrawingScreen(this,l.shape.type.equals("custom")?l.shape.vertices:List.of(),EditorLimits.maxCustomPoints(),points->{
             l.shape.type="custom";l.shape.vertices=new ArrayList<>(points);l.count=points.size();dirty=true;
         }));});
-        button("button.formula",left+cw+4,56,cw,()->{if(commit())client.setScreen(new FormulaScreen(this,points->{
+        button("button.draw_3d",left+cw+4,56,cw,()->action(()->{if(commit())client.setScreen(new Freehand3DScreen(this,l,EditorLimits.maxCustomPoints(),points->{
+            l.shape.type="custom";l.shape.vertices=new ArrayList<>(points);l.count=points.size();dirty=true;
+        }));}));
+        button("button.formula",left+2*(cw+4),56,cw,()->{if(commit())client.setScreen(new FormulaScreen(this,EditorLimits.maxCustomPoints(),points->{
             l.shape.type="custom";l.shape.vertices=new ArrayList<>(points);l.count=points.size();dirty=true;
         }));}).active=EditorI18n.tier()!=EditorI18n.Tier.SIMPLE;
     }
     private void previewPane(){
-        action(()->preview=new PreviewModel(effect));int cw=(panelWidth-16)/5;
-        button("button.restart",left,56,cw,()->action(()->preview=new PreviewModel(effect)));
+        preview=null;action(()->preview=new PreviewModel(effect,EditorLimits.maxCustomPoints()));int cw=(panelWidth-16)/5;
+        button("button.restart",left,56,cw,()->action(()->preview=new PreviewModel(effect,EditorLimits.maxCustomPoints())));
         button("button.zoom_in",left+cw+4,56,cw,()->zoom=Math.min(160,zoom*1.25));
         button("button.zoom_out",left+2*(cw+4),56,cw,()->zoom=Math.max(1,zoom/1.25));
         button("button.rotate_left",left+3*(cw+4),56,cw,()->yaw-=.2);
@@ -170,8 +173,12 @@ public final class EffectEditorScreen extends Screen {
     private ParticleLayer selected(){layer=Math.min(layer,effect.layers.size()-1);return effect.layers.get(layer);}
     private boolean commit(){
         ParticleEffect backup=JsonSupport.copy(effect);
-        try{for(Field f:fields)f.input.write.accept(f.widget.getText().trim());EffectValidator.validate(effect);return true;}
-        catch(Exception e){effect=backup;status=msg("status.invalid_input",Objects.toString(e.getMessage(),msg("status.check_values")));refresh();return false;}
+        try{for(Field f:fields)f.input.write.accept(f.widget.getText().trim());EffectValidator.validate(effect,EditorLimits.maxCustomPoints());return true;}
+        catch(Exception e){
+            effect=backup;
+            status=msg("status.invalid_input",localizeServerMessage(Objects.toString(e.getMessage(),msg("status.check_values"))));
+            refresh();return false;
+        }
     }
     private void discardThen(Runnable task){
         if(!dirty){task.run();return;}
@@ -181,12 +188,16 @@ public final class EffectEditorScreen extends Screen {
     private boolean connected(){return client!=null&&client.getNetworkHandler()!=null&&ClientPlayNetworking.canSend(EditorRequest.ID);}
     private void request(String action,String name,String json){
         if(!connected()){status=msg("status.server_channel_missing");return;}
-        ClientPlayNetworking.send(new EditorRequest(action,name,json));status=msg("status.request",action);
+        if(action.equals("save")&&json.getBytes(StandardCharsets.UTF_8).length>24000) {
+            for(String part:EditorTransfer.split(json))ClientPlayNetworking.send(new EditorRequest("save_part",name,part));
+        } else ClientPlayNetworking.send(new EditorRequest(action,name,json));
+        status=msg("status.request",action);
     }
     public void receive(EditorResponse response){
         action(()->{switch(response.action()){
             case "list"->{String[] list=JsonSupport.GSON.fromJson(response.content(),String[].class);names=new ArrayList<>(Arrays.asList(list));Collections.sort(names);status=msg("status.server_effects",names.size());if(tab==0)refresh();}
-            case "effect"->{ParticleEffect received=JsonSupport.GSON.fromJson(response.content(),ParticleEffect.class);EffectValidator.validate(received);effect=received;layer=0;tab=2;page=0;dirty=false;status=msg("status.loaded",effect.name);refresh();}
+            case "effect"->{ParticleEffect received=JsonSupport.GSON.fromJson(response.content(),ParticleEffect.class);EffectValidator.validate(received,EditorLimits.maxCustomPoints());effect=received;layer=0;tab=2;page=0;dirty=false;status=msg("status.loaded",effect.name);refresh();}
+            case "config"->{com.google.gson.JsonObject config=com.google.gson.JsonParser.parseString(response.content()).getAsJsonObject();EditorLimits.update(config.get("maxCustomPoints").getAsInt(),config.get("canEdit").getAsBoolean());}
             case "saved"->{dirty=false;if(!names.contains(response.content())){names.add(response.content());Collections.sort(names);}status=msg("status.saved",response.content());}
             case "deleted"->{names.remove(response.content());status=msg("status.deleted",response.content());dirty=false;tab=0;page=0;refresh();}
             default->status=localizeServerMessage(response.content());
@@ -203,7 +214,7 @@ public final class EffectEditorScreen extends Screen {
         if(tab==3){
             ParticleLayer l=selected();ctx.drawTextWithShadow(textRenderer,tr("label.tier",EditorI18n.msg("tier."+EditorI18n.tier().name().toLowerCase(Locale.ROOT))),left,88,0xFFCCD0D4);
             ctx.drawTextWithShadow(textRenderer,tr("label.current_shape",EditorI18n.name("shape",l.shape.type)),left,108,0xFFE0E0E0);
-            ctx.drawTextWithShadow(textRenderer,tr("label.points",l.shape.vertices.size(),EffectValidator.MAX_CUSTOM_POINTS),left,128,0xFFE0E0E0);
+            ctx.drawTextWithShadow(textRenderer,tr("label.points",l.shape.vertices.size(),EditorLimits.maxCustomPoints()),left,128,0xFFE0E0E0);
             ctx.drawTextWithShadow(textRenderer,textRenderer.trimToWidth(msg("label.tools_help"),panelWidth),left,153,0xFFBCCFC6);
         }
         if(tab==4&&preview!=null){
@@ -222,7 +233,7 @@ public final class EffectEditorScreen extends Screen {
     @Override public void renderBackground(DrawContext ctx,int mouseX,int mouseY,float delta) {
         ctx.fill(0,0,width,height,0xFF101512);
     }
-    public void close(){if(!commit())return;discardThen(()->client.setScreen(parent));}
+    public void close(){discardThen(()->client.setScreen(parent));}
     public boolean shouldPause(){return false;}
     private static Text tr(String key,Object... args){return EditorI18n.tr(key,args);}
     private static String msg(String key,Object... args){return EditorI18n.msg(key,args);}
@@ -231,7 +242,7 @@ public final class EffectEditorScreen extends Screen {
         if(message.startsWith("Unknown effect: "))return msg("status.unknown_effect",message.substring("Unknown effect: ".length()));
         if(message.equals("Effect already exists"))return msg("status.effect_exists");
         if(message.startsWith("Name must be "))return msg("status.invalid_name");
-        if(message.startsWith("JSON exceeds "))return msg("status.json_too_large");
+        if(message.startsWith("JSON exceeds ")||message.startsWith("Effect JSON exceeds ")||message.startsWith("Group JSON exceeds "))return msg("status.json_too_large");
         return message;
     }
 }

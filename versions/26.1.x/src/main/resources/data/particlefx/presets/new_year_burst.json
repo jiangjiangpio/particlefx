@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "name": "new_year_burst",
+  "durationTicks": 75,
+  "mode": "once",
+  "viewDistance": 128,
+  "layers": [
+    {
+      "particle": "minecraft:firework",
+      "shape": {"type": "sphere", "radius": 6},
+      "count": 120,
+      "lifetime": 24,
+      "intervalTicks": 4,
+      "speed": 0.03
+    },
+    {
+      "particle": "minecraft:end_rod",
+      "shape": {"type": "star", "radius": 8, "innerRadius": 3.5, "points": 8},
+      "count": 100,
+      "lifetime": 36,
+      "intervalTicks": 4,
+      "speed": 0.01,
+      "animations": [
+        {"type": "rotation", "axis": "y", "speed": 12, "durationTicks": 36, "mode": "once"}
+      ]
+    },
+    {
+      "particle": "minecraft:soul_fire_flame",
+      "shape": {"type": "star", "radius": 6.5, "innerRadius": 2.5, "points": 8},
+      "count": 80,
+      "lifetime": 34,
+      "intervalTicks": 4,
+      "speed": 0.01
+    },
+    {
+      "particle": "minecraft:electric_spark",
+      "shape": {"type": "sphere", "radius": 8.5},
+      "count": 70,
+      "lifetime": 28,
+      "intervalTicks": 5,
+      "speed": 0.01
+    },
+    {
+      "particle": "minecraft:glow",
+      "shape": {"type": "sphere", "radius": 9},
+      "count": 90,
+      "lifetime": 35,
+      "intervalTicks": 5,
+      "speed": 0.01
+    },
+    {
+      "particle": "minecraft:cherry_leaves",
+      "shape": {"type": "sphere", "radius": 7},
+      "count": 80,
+      "lifetime": 30,
+      "intervalTicks": 5,
+      "speed": 0.01
+    },
+    {
+      "particle": "minecraft:happy_villager",
+      "shape": {"type": "star", "radius": 5, "innerRadius": 2, "points": 5},
+      "count": 50,
+      "lifetime": 30,
+      "intervalTicks": 5,
+      "speed": 0.01
+    }
+  ]
+}

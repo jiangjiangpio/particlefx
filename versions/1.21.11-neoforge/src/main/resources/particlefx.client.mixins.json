@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "dev.particlefx.client.mixin",
+  "plugin": "dev.particlefx.client.mixin.ParticleFXMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["BrushCameraMixin", "BrushViewMixin"],
+  "injectors": {"defaultRequire": 1}
+}

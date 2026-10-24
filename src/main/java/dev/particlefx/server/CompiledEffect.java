@@ -3,6 +3,7 @@ import dev.particlefx.animation.Animation;
 import dev.particlefx.effect.ParticleEffect;
 import dev.particlefx.effect.ParticleLayer;
 import dev.particlefx.math.Vec3;
+import dev.particlefx.math.StaticGeometry;
 import dev.particlefx.shape.ShapeRegistry;
 import dev.particlefx.storage.*;
 import java.util.ArrayList;
@@ -14,9 +15,13 @@ import net.minecraft.util.Identifier;
 public final class CompiledEffect {
     final ParticleEffect definition;
     final List<Layer> layers;
-    public record Layer(ParticleLayer definition,SimpleParticleType particle,Vec3[] geometry) {}
+    public record Layer(ParticleLayer definition,SimpleParticleType particle,Vec3[] geometry,double[] staticPositions) {
+        public Layer(ParticleLayer definition,SimpleParticleType particle,Vec3[] geometry) {
+            this(definition,particle,geometry,StaticGeometry.compile(definition,geometry));
+        }
+    }
     public CompiledEffect(ParticleEffect input,EngineConfig config) {
-        EffectValidator.validate(input);definition=JsonSupport.copy(input);
+        EffectValidator.validate(input,config.maxCustomPoints);definition=JsonSupport.copy(input);
         List<Layer> built=new ArrayList<>();
         int remaining=config.maxParticlesPerEffect;
         for(ParticleLayer l:definition.layers) {

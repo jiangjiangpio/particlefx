@@ -11,6 +11,9 @@ public final class ParticleFXPermissions {
         EngineConfig c=ParticleFXServer.get(s.getServer()).config();
         return s.getPermissions().hasPermission(new Permission.Level(PermissionLevel.fromLevel(c.opPermissionLevel)));
     }
+    public static boolean settingsAdmin(ServerCommandSource s) {
+        return s.getPermissions().hasPermission(new Permission.Level(PermissionLevel.fromLevel(4)));
+    }
     public static boolean allowed(ServerCommandSource s,String action) {
         EngineConfig c=ParticleFXServer.get(s.getServer()).config();
         boolean fallback=admin(s)||switch(action) {case "use"->c.allowPlayerUse;case "play"->c.allowPlayerPlay;default->false;};

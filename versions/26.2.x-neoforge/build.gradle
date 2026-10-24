@@ -1,0 +1,57 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+version = project.mod_version
+group = 'dev.particlefx'
+base { archivesName = "particlefx-${project.minecraft_version}-neoforge" }
+repositories { mavenCentral() }
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(Integer.parseInt(project.java_version))
+    withSourcesJar()
+}
+sourceSets.main {
+    java.srcDir 'src/client/java'
+    resources.srcDir 'src/client/resources'
+}
+neoForge {
+    version = project.neo_version
+    mods { particlefx { sourceSet sourceSets.main } }
+    runs {
+        client { client() }
+        server { server(); programArgument '--nogui' }
+    }
+}
+dependencies {
+    implementation 'net.objecthunter:exp4j:0.4.8'
+    jarJar('net.objecthunter:exp4j:0.4.8') {
+        version { strictly '[0.4.8,0.5)'; prefer '0.4.8' }
+    }
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.google.code.gson:gson:2.13.2'
+    testImplementation 'org.joml:joml:1.10.8'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('META-INF/neoforge.mods.toml') { expand version:project.version, minecraft:project.minecraft_version }
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+test { useJUnitPlatform() }
+tasks.register('verifyClientScreens') {
+    doLast {
+        def parser = new groovy.json.JsonSlurper()
+        def en = parser.parse(file('src/client/resources/assets/particlefx/lang/en_us.json'))
+        def zh = parser.parse(file('src/client/resources/assets/particlefx/lang/zh_cn.json'))
+        if (en.keySet() != zh.keySet()) throw new GradleException('Translation keys differ')
+        fileTree('src/client/java').matching { include '**/*.java' }.each { source ->
+            (source.getText('UTF-8') =~ /"(?:screen|tab|button|label|status|picker|confirm|mode)\.[A-Za-z0-9_.-]+"/).each { match ->
+                String key = "particlefx.${match.substring(1, match.length()-1)}"
+                if (!key.endsWith('.') && !en.containsKey(key)) throw new GradleException("Missing translation ${key}")
+            }
+        }
+    }
+}
+check.dependsOn verifyClientScreens
+jar { from('../../LICENSE') }

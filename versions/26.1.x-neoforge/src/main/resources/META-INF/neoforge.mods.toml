@@ -1,0 +1,22 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+[[mods]]
+modId="particlefx"
+version="${version}"
+displayName="ParticleFX"
+description="Vanilla particle engine with optional client editor."
+[[mixins]]
+config="particlefx.client.mixins.json"
+[[dependencies.particlefx]]
+modId="neoforge"
+type="required"
+versionRange="[26.1.2.114,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.particlefx]]
+modId="minecraft"
+type="required"
+versionRange="[26.1.2]"
+ordering="NONE"
+side="BOTH"

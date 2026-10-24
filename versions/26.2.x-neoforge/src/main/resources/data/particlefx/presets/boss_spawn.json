@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1, "name": "boss_spawn", "durationTicks": 100, "mode": "once", "viewDistance": 64,
+  "layers": [
+    {"particle": "minecraft:soul", "shape": {"type": "cone", "radius": 3, "height": 5}, "count": 90, "lifetime": 80, "intervalTicks": 3, "animations": [{"type": "rotation", "axis": "y", "from": 0, "to": 720, "durationTicks": 80, "mode": "once"}]},
+    {"particle": "minecraft:sculk_soul", "shape": {"type": "ring", "radius": 3.2, "innerRadius": 2.8}, "count": 64, "lifetime": 100, "intervalTicks": 4},
+    {"particle": "minecraft:crit", "shape": {"type": "sphere", "radius": 2}, "offset": {"x": 0, "y": 2, "z": 0}, "count": 80, "delay": 75, "lifetime": 25, "intervalTicks": 5, "speed": 0.05}
+  ]
+}

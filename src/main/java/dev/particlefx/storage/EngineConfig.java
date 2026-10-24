@@ -10,6 +10,7 @@ public final class EngineConfig {
     public int maxPacketsPerPlayerPerTick = 2000;
     public int maxActiveEffects = 100;
     public int maxEffectsPerPlayer = 5;
+    public int maxCustomPoints = 256;
     public double maxViewDistance = 128;
     public boolean allowPlayerUse = true;
     public boolean allowPlayerPlay = false;
@@ -27,6 +28,7 @@ public final class EngineConfig {
         EffectValidator.range(maxPacketsPerPlayerPerTick,1,20000,"maxPacketsPerPlayerPerTick");
         EffectValidator.range(maxActiveEffects,1,1000,"maxActiveEffects");
         EffectValidator.range(maxEffectsPerPlayer,1,maxActiveEffects,"maxEffectsPerPlayer");
+        EffectValidator.range(maxCustomPoints,1,4096,"maxCustomPoints");
         EffectValidator.range(maxViewDistance,1,256,"maxViewDistance");
         EffectValidator.range(opPermissionLevel,1,4,"opPermissionLevel");
         EffectValidator.require(java.util.Set.of("auto","all","off").contains(bedrockDetection),"Invalid bedrockDetection");

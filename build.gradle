@@ -46,7 +46,7 @@ java {
 }
 test { useJUnitPlatform() }
 tasks.register('verifyClientScreens') {
-    def guiSources = fileTree('src/client/java/dev/particlefx/client/gui') { include '**/*.java' }
+    def guiSources = fileTree('src/client/java/dev/particlefx/client') { include '**/*.java' }
     def languages = files('src/client/resources/assets/particlefx/lang/en_us.json',
         'src/client/resources/assets/particlefx/lang/zh_cn.json')
     inputs.files(guiSources, languages)
@@ -56,6 +56,13 @@ tasks.register('verifyClientScreens') {
         def chinese = json.parse(languages.files.find { it.name == 'zh_cn.json' })
         if (english.keySet() != chinese.keySet()) {
             throw new GradleException('ParticleFX en_us and zh_cn translation keys differ')
+        }
+        def editor = file('src/client/java/dev/particlefx/client/gui/EffectEditorScreen.java').getText('UTF-8')
+        ['button.draw_2d', 'button.draw_3d', 'button.formula'].each { key ->
+            if (!editor.contains("\"${key}\"")) throw new GradleException("Missing creation entry: ${key}")
+        }
+        if (!file('src/client/java/dev/particlefx/client/gui/DrawingScreen.java').isFile()) {
+            throw new GradleException('The 2D brush must remain available')
         }
         guiSources.each { source ->
             def code = source.getText('UTF-8')
